@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Search Ops</title>
+<meta name="description" content="Private job-search tracker: applications pipeline and target-company watchlist.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%F0%9F%9F%A2</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EEF1F4;
+  --surface:#FFFFFF;
+  --ink:#1A2330;
+  --ink-dim:#5B6B7D;
+  --line:#D7DEE5;
+  --accent:#2F6F5E;
+  --accent-ink:#FFFFFF;
+  --st-researching:#5B6B7D;
+  --st-applied:#4C6FA6;
+  --st-screening:#A6740C;
+  --st-interviewing:#6B5CA5;
+  --st-offer:#2E7D4F;
+  --st-rejected:#A6483A;
+  --st-withdrawn:#8A94A0;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --radius:10px;
+  --shadow:0 1px 2px rgba(26,35,48,0.06),0 1px 1px rgba(26,35,48,0.04);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#0F151C;
+    --surface:#161E27;
+    --ink:#E3E8ED;
+    --ink-dim:#8C9AAA;
+    --line:#28323D;
+    --accent:#5FBFA4;
+    --accent-ink:#0B1512;
+    --st-researching:#8C9AAA;
+    --st-applied:#89AEE0;
+    --st-screening:#E0B04F;
+    --st-interviewing:#B39FE0;
+    --st-offer:#63C48A;
+    --st-rejected:#E08376;
+    --st-withdrawn:#8A94A0;
+    --shadow:0 1px 2px rgba(0,0,0,0.4),0 1px 1px rgba(0,0,0,0.3);
+  }
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:14px;
+  line-height:1.5;
+  min-height:100vh;
+}
+::selection{background:var(--accent);color:var(--accent-ink);}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 24px 80px;}
+header.top{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:22px;
+  flex-wrap:wrap;
+}
+header.top h1{font-size:19px;font-weight:700;letter-spacing:-0.01em;margin:0;}
+header.top .sub{font-size:12.5px;color:var(--ink-dim);font-family:var(--mono);}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:26px;}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);}
+.stat .n{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:26px;font-weight:600;line-height:1.1;}
+.stat .l{font-size:11.5px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:0.05em;margin-top:4px;}
+.stat.accent .n{color:var(--accent);}
+section.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:22px;overflow:hidden;}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
+.panel-head h2{font-size:14px;font-weight:600;margin:0;}
+.panel-head .count{font-family:var(--mono);color:var(--ink-dim);font-size:12px;}
+.filters{display:flex;gap:6px;flex-wrap:wrap;}
+.filters button{font-family:var(--sans);font-size:12px;font-weight:500;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink-dim);cursor:pointer;}
+.filters button.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.table-scroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;min-width:920px;}
+thead th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-dim);font-weight:600;padding:10px 14px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;}
+thead th:hover{color:var(--ink);}
+thead th .arrow{opacity:0.5;font-size:9px;margin-left:3px;}
+tbody td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top;font-size:13px;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:color-mix(in srgb, var(--ink) 3%, transparent);}
+td.mono,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+td.notes{color:var(--ink-dim);max-width:240px;}
+td.company{font-weight:600;}
+td.role{color:var(--ink-dim);}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap;}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;}
+.pill.st-researching{color:var(--st-researching);background:color-mix(in srgb, var(--st-researching) 14%, transparent);}
+.pill.st-applied{color:var(--st-applied);background:color-mix(in srgb, var(--st-applied) 14%, transparent);}
+.pill.st-screening{color:var(--st-screening);background:color-mix(in srgb, var(--st-screening) 14%, transparent);}
+.pill.st-interviewing{color:var(--st-interviewing);background:color-mix(in srgb, var(--st-interviewing) 14%, transparent);}
+.pill.st-offer{color:var(--st-offer);background:color-mix(in srgb, var(--st-offer) 14%, transparent);}
+.pill.st-rejected{color:var(--st-rejected);background:color-mix(in srgb, var(--st-rejected) 14%, transparent);}
+.pill.st-withdrawn{color:var(--st-withdrawn);background:color-mix(in srgb, var(--st-withdrawn) 14%, transparent);}
+.apply-link{display:inline-flex;align-items:center;gap:3px;font-size:12.5px;font-weight:600;color:var(--accent);text-decoration:none;white-space:nowrap;}
+.apply-link:hover{text-decoration:underline;}
+.empty{padding:36px 18px;text-align:center;color:var(--ink-dim);font-size:13px;}
+footer.meta{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);text-align:center;margin-top:8px;}
+@media (max-width:640px){
+  .wrap{padding:18px 14px 60px;}
+  header.top{flex-direction:column;align-items:flex-start;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>Job Search Ops</h1>
+    <div class="sub">private tracker &middot; thoshith &middot; updated by Claude</div>
+  </header>
+
+  <div id="stats" class="stats"></div>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Applications</h2>
+      <div class="filters" id="statusFilters"></div>
+      <span class="count" id="appCount"></span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead id="appHead"></thead>
+        <tbody id="appBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Target companies</h2>
+      <span class="count" id="targetCount"></span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Company</th><th>Country</th><th>Why this one</th><th>Visa sponsorship</th><th>Notes</th></tr>
+        </thead>
+        <tbody id="targetBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="meta">
+    <span id="lastUpdated"></span>
+  </footer>
+
+</div>
+
+<script>
+const STATE = {"applications": [{"id": "02279531", "company": "CloudRaft", "role": "Site Reliability Engineer (SRE)", "location": "Indore, MP (Hybrid)", "country": "India", "source": "LinkedIn", "dateApplied": "", "status": "Researching", "contact": "", "nextStep": "LinkedIn redirects to CloudRaft's own external application form (\"Apply on company website\") - couldn't be automated (likely custom questions), needs manual completion", "notes": "Smaller DevOps/SRE consulting firm - may value the mixed traditional-infra + K8s background", "link": "https://in.linkedin.com/jobs/view/site-reliability-engineer-sre-at-cloudraft-4406564549"}, {"id": "1f691268", "company": "PocketFM", "role": "Site Reliability Engineer", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-10", "status": "Applied", "contact": "", "nextStep": "Applied via Instahyre (one-click, using existing profile+resume) - wait for recruiter response", "notes": "Audio-series entertainment platform, 80M listeners. Kubernetes (EKS/GKE), Prometheus, Grafana, CI/CD, MySQL, Python. Reliability + platform ops role.", "link": "https://www.instahyre.com/job-434095-site-reliability-engineer-at-pocketfm-bangalore"}, {"id": "cdc06a6b", "company": "Logikality", "role": "Site Reliability Engineer", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-10", "status": "Applied", "contact": "", "nextStep": "Applied via Instahyre (one-click, using existing profile+resume) - wait for recruiter response", "notes": "AI-powered mortgage/fintech services (US-focused). Cloud + hybrid infra reliability, automation, DevOps.", "link": "https://www.instahyre.com/job-435297-site-reliability-engineer-at-logikality-bangalore"}, {"id": "57e3fbc6", "company": "Groww", "role": "Site Reliability Engineer", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-10", "status": "Applied", "contact": "", "nextStep": "Applied via Instahyre (one-click, using existing profile+resume) - wait for recruiter response", "notes": "India's fastest-growing investment platform (Flipkart/ICICI alums, backed by Tiger Global/Sequoia). Reliability engineering, monitoring, load balancing, Grafana.", "link": "https://www.instahyre.com/job-431271-site-reliability-engineer-at-groww-2-bangalore"}, {"id": "944e0a6e", "company": "Mishipay", "role": "Site Reliability Engineer", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-10", "status": "Applied", "contact": "Sanjana Supriya (Internal Recruiter)", "nextStep": "Applied via Instahyre one-click - wait for recruiter response", "notes": "Retail/checkout tech (in-store mobile checkout). 4-8 yrs band. Employee reviews mixed (2.5-3.7 range) but still a live, verified opening.", "link": "https://www.instahyre.com/job-434220-site-reliability-engineer-at-mishipay-2-bangalore"}, {"id": "60fe3ac2", "company": "HEN Technologies", "role": "Site Reliability Engineer", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-10", "status": "Applied", "contact": "Mitali Soni (Senior Recruiter)", "nextStep": "Applied via Instahyre one-click - wait for recruiter response", "notes": "5-6 yr band (slight stretch vs current title tenure) but Instamatch score HIGH.", "link": "https://www.instahyre.com/job-426658-site-reliability-engineer-at-hen-technologies-bangalore"}, {"id": "67cc0215", "company": "Moonfrog Labs", "role": "DevOps Engineer II", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-10", "status": "Applied", "contact": "Priyagini Tiwari", "nextStep": "Applied via Instahyre one-click - wait for recruiter response", "notes": "Mobile gaming company, good employee reviews (4.0 overall). 4-8 yrs band.", "link": "https://www.instahyre.com/job-426332-devops-engineer-ii-at-moonfrog-labs-bangalore"}, {"id": "d9c5960a", "company": "Manifest", "role": "Site Reliability Engineer", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-10", "status": "Applied", "contact": "Sree Sivasakthi R (Talent Advisor, Scaling Theory)", "nextStep": "Applied via Instahyre one-click - posted via a staffing agency (Scaling Theory), several open reqs for same role", "notes": "3-6 yr band, strong fit. Small company (10-50 employees), founded 2023.", "link": "https://www.instahyre.com/job-431762-site-reliability-engineer-at-manifest-2-bangalore"}, {"id": "ba3c323a", "company": "Jodo", "role": "Senior DevOps Engineer", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-10", "status": "Applied", "contact": "Cibi M T (Manager, Petals Careers)", "nextStep": "Applied via Instahyre one-click - title says Senior (5-8 yrs), a stretch, but Instamatch HIGH", "notes": "Education fintech. Strong employee reviews (4.3 overall).", "link": "https://www.instahyre.com/job-435262-senior-devops-engineer-at-jodo-bangalore"}, {"id": "f46eb85b", "company": "DataHub", "role": "DevOps / Site Reliability Engineer", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-10", "status": "Applied", "contact": "Renuka Yadwad (Talent Partner)", "nextStep": "Applied via Instahyre one-click", "notes": "Good reviews (3.8 overall). 4-8 yrs.", "link": "https://www.instahyre.com/job-441411-devops-site-reliability-engineer-at-datahub-bangalore"}, {"id": "da49ee6d", "company": "ZAGENO", "role": "DevOps Engineer", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-10", "status": "Applied", "contact": "Agmendu Bhati (Technical Recruiter, Success Pact)", "nextStep": "Applied via Instahyre one-click", "notes": "Lab supplies marketplace. Reviews 3.8 overall. 4-8 yrs.", "link": "https://www.instahyre.com/job-437187-devops-engineer-at-zageno-bangalore"}, {"id": "8c0213f2", "company": "MiQ", "role": "Senior Site Reliability Engineer", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-10", "status": "Applied", "contact": "Avinash Pc (Associate Talent Acquisition Partner)", "nextStep": "Applied via Instahyre one-click", "notes": "Adtech, 500-1000 employees. 4-8 yrs.", "link": "https://www.instahyre.com/job-433232-senior-site-reliability-engineer-at-miq-bangalore"}, {"id": "b26d7440", "company": "MicroGenesis Techsoft", "role": "Site Reliability Engineer", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-10", "status": "Applied", "contact": "Kamal Agarwala (Managing Partner, YourHRfolks)", "nextStep": "Applied via Instahyre one-click", "notes": "Good reviews (4.0 overall). 5-9 yrs.", "link": "https://www.instahyre.com/job-431104-site-reliability-engineer-at-microgenesis-techsoft-bangalore"}, {"id": "85f3d432", "company": "Mayhem Studios", "role": "Site Reliability Engineer", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-10", "status": "Applied", "contact": "Dikshita Verma (Founder, Enter Recruitment)", "nextStep": "Applied via Instahyre one-click", "notes": "5-9 yrs, small studio (50-200).", "link": "https://www.instahyre.com/job-418284-site-reliability-engineer-at-mayhem-studios-bangalore"}, {"id": "6d0f7f4e", "company": "Flipkart", "role": "Site Reliability Engineer", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-10", "status": "Applied", "contact": "Hari Bhaskar B A (Lead Recruiter, Talentiser)", "nextStep": "Applied via Instahyre one-click - major brand, high Instamatch", "notes": "India's largest e-commerce co. Reviews 3.8 overall. 5-9 yrs.", "link": "https://www.instahyre.com/job-413333-site-reliability-engineer-at-flipkart-bangalore"}, {"id": "0e7880e2", "company": "Rapido", "role": "DevOps Engineer", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-10", "status": "Applied", "contact": "Tapish Bhattkoti (Recruiter, Zyoin)", "nextStep": "Applied via Instahyre one-click", "notes": "Well-known ride-hailing app. Good reviews (3.9 overall). 5-8 yrs.", "link": "https://www.instahyre.com/job-389311-devops-engineer-at-rapido-bangalore"}, {"id": "13442334", "company": "Nexthink", "role": "Platform / DevOps Engineer", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-10", "status": "Applied", "contact": "Krithika Jagadish (Senior Member Staffing, Talent Management Labs)", "nextStep": "Applied via Instahyre one-click", "notes": "Excellent reviews (4.1 overall). 5-9 yrs.", "link": "https://www.instahyre.com/job-411582-platform-devops-engineer-at-nexthink-bangalore"}, {"id": "68f39989", "company": "Visa", "role": "Site Reliability Engineer", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-11", "status": "Applied", "contact": "Deepti Gupta (Senior Staffing Specialist, Pylon Management Consulting)", "nextStep": "Applied via Instahyre one-click - major brand", "notes": "Global payments giant. Good reviews (3.8 overall). 5-9 yrs.", "link": "https://www.instahyre.com/job-419771-site-reliability-engineer-at-visa-2-bangalore"}, {"id": "5c3b3046", "company": "Arctic Wolf", "role": "Sr. Engineer Platform and Infrastructure", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-11", "status": "Applied", "contact": "Vivek Goswami (Admin, TPG Search)", "nextStep": "Applied via Instahyre one-click", "notes": "Cybersecurity company. Excellent reviews (4.1 overall). 5-9 yrs.", "link": "https://www.instahyre.com/job-365094-sr-engineer-platform-and-infrastructure-at-arctic-wolf-bangalore"}, {"id": "219c2c4e", "company": "Ionic Wealth", "role": "Senior DevOps Engineer", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-11", "status": "Applied", "contact": "", "nextStep": "Applied via Instahyre one-click - 6-8 yrs is a stretch", "notes": "Wealth management platform for HNIs. Reviews 4.0 overall.", "link": "https://www.instahyre.com/job-435909-senior-devops-engineer-at-ionic-wealth-bangalore"}, {"id": "f456fec9", "company": "Oolka", "role": "DevSecOps Engineer", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-11", "status": "Applied", "contact": "", "nextStep": "Applied via Instahyre one-click", "notes": "Fintech credit management platform. 5-9 yrs.", "link": "https://www.instahyre.com/job-428056-devsecops-engineer-at-oolka-bangalore"}, {"id": "f18c0345", "company": "Bluno", "role": "DevSecOps Engineer", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-11", "status": "Applied", "contact": "", "nextStep": "Applied via Instahyre one-click", "notes": "Export/import compliance tech, very early stage (0-10 employees). 5-8 yrs.", "link": "https://www.instahyre.com/job-441460-devsecops-engineer-at-bluno-bangalore"}, {"id": "90ad3466", "company": "OLake by Datazip", "role": "Senior DevOps Engineer", "location": "Bangalore", "country": "India", "source": "Instahyre", "dateApplied": "2026-09-11", "status": "Applied", "contact": "", "nextStep": "Applied via Instahyre one-click - outstanding reviews, prioritize if they respond", "notes": "Open-source data engine. Outstanding reviews (4.7 overall!). 4-7 yrs.", "link": "https://www.instahyre.com/job-435861-senior-devops-engineer-at-olaketm-by-datazip-bangalore"}], "targets": [{"id": "dc453369", "company": "Roku", "country": "India", "why": "Known strong DevOps/SRE team, big-data + K8s + AWS/GCP infra", "visa": "Unknown", "notes": "Current open req (Sr. Software Engineer, DevOps/SRE) wants 8+ yrs - out of reach right now. Watch for a more junior opening. https://www.weareroku.com/jobs/senior-software-engineer-devops-sre-bengaluru-karnataka-india"}, {"id": "cdf0c2e5", "company": "Infosys", "country": "India", "why": "Bulk-hiring multi-cloud DevOps (AWS/Azure/GCP, Terraform, Kubernetes, GitOps) across 3-14 yr band - likely has entry points", "visa": "Unknown", "notes": "INR 9-38 LPA range across levels, hybrid. Search Infosys careers portal directly for current mid-level openings."}, {"id": "4abaa0ab", "company": "Capgemini", "country": "India", "why": "Bulk-hiring AWS DevOps engineers across levels, plus SRE/DevOps fresher-trainee tracks", "visa": "Unknown", "notes": "Hybrid roles across Bangalore/Pune/Hyderabad/Mumbai/Chennai. Good breadth of entry points to watch."}, {"id": "0bfc3694", "company": "FIS Global", "country": "India", "why": "Senior Cloud Engineer role doing production Kubernetes (EKS) on AWS with Terraform/Ansible/Python - applies SRE practices at scale", "visa": "Unknown", "notes": "Check seniority requirement on current req before treating as a near-term target."}, {"id": "6572bd8c", "company": "SymphonyAI Financial Services", "country": "India", "why": "SRE team for SaaS reliability at a fintech-adjacent AI company", "visa": "Unknown", "notes": "Current open reqs are Architect/Principal and Lead level (too senior right now, 28-32L band). Watch careers.symphonyai.com for a mid/associate-level SRE opening."}, {"id": "0a3ed07a", "company": "Meesho", "country": "India", "why": "Major India e-commerce co, active DevOps hiring", "visa": "Unknown", "notes": "Current open req is SDE IV - DevOps (Big Data), which is senior/staff level. Watch for a lower-band DevOps opening."}, {"id": "e0c71897", "company": "Mphasis", "country": "India", "why": "Building out an Observability SRE track (Grafana / LGTM stack: Loki, Grafana, Tempo, Mimir) in Bengaluru", "visa": "Unknown", "notes": "Directly relevant to current Grafana/Prometheus experience. Level on current req unclear - check before applying."}], "updatedAt": "2026-09-11T18:00:00+05:30"};
+
+const STATUSES = ["Researching","Applied","Screening","Interviewing","Offer","Rejected","Withdrawn"];
+const STATUS_CLASS = {
+  Researching:"st-researching", Applied:"st-applied", Screening:"st-screening",
+  Interviewing:"st-interviewing", Offer:"st-offer", Rejected:"st-rejected", Withdrawn:"st-withdrawn"
+};
+
+let sortKey = "status";
+let sortDir = "asc";
+let statusFilter = "All";
+
+function esc(s){
+  const d = document.createElement('div');
+  d.textContent = (s === undefined || s === null) ? "" : String(s);
+  return d.innerHTML;
+}
+function escAttr(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function safeHref(u){
+  const s = String(u||'').trim();
+  return /^https?:\/\//i.test(s) ? s : null;
+}
+function fmtDate(iso){
+  if(!iso) return "&mdash;";
+  const parts = iso.split("-");
+  if(parts.length!==3) return esc(iso);
+  const months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return months[parseInt(parts[1],10)-1] + " " + parseInt(parts[2],10) + ", " + parts[0];
+}
+
+function computeStats(){
+  const apps = STATE.applications;
+  const active = apps.filter(a => ["Applied","Screening","Interviewing"].includes(a.status)).length;
+  const interviewing = apps.filter(a => a.status === "Interviewing").length;
+  const offers = apps.filter(a => a.status === "Offer").length;
+  const decided = apps.filter(a => ["Screening","Interviewing","Offer","Rejected"].includes(a.status)).length;
+  const respRate = apps.length ? Math.round((decided/apps.length)*100) : 0;
+  return [
+    {n: apps.length, l:"Total applications"},
+    {n: active, l:"Active pipeline"},
+    {n: interviewing, l:"Interviewing"},
+    {n: offers, l:"Offers", accent:true},
+    {n: respRate+"%", l:"Response rate"},
+  ];
+}
+
+function renderStats(){
+  document.getElementById('stats').innerHTML = computeStats().map(function(s){
+    return '<div class="stat'+(s.accent?' accent':'')+'"><div class="n">'+esc(s.n)+'</div><div class="l">'+esc(s.l)+'</div></div>';
+  }).join('');
+}
+
+function renderFilters(){
+  const opts = ["All"].concat(STATUSES);
+  document.getElementById('statusFilters').innerHTML = opts.map(function(o){
+    return '<button data-status="'+esc(o)+'" class="'+(statusFilter===o?'active':'')+'">'+esc(o)+'</button>';
+  }).join('');
+}
+
+const COLS = [
+  {key:"company", label:"Company"},
+  {key:"role", label:"Role"},
+  {key:"location", label:"Location"},
+  {key:"country", label:"Country"},
+  {key:"source", label:"Source"},
+  {key:"dateApplied", label:"Date applied"},
+  {key:"status", label:"Status"},
+  {key:"contact", label:"Contact"},
+  {key:"nextStep", label:"Next step"},
+  {key:"notes", label:"Notes"},
+];
+
+function renderAppHead(){
+  const cells = COLS.map(function(c){
+    const arrow = sortKey===c.key ? '<span class="arrow">'+(sortDir==="asc"?"&#9650;":"&#9660;")+'</span>' : '';
+    return '<th data-key="'+c.key+'">'+esc(c.label)+arrow+'</th>';
+  });
+  cells.splice(2, 0, '<th>Apply</th>');
+  document.getElementById('appHead').innerHTML = '<tr>' + cells.join('') + '</tr>';
+}
+
+function sortedFiltered(){
+  let apps = STATE.applications.slice();
+  if(statusFilter!=="All") apps = apps.filter(function(a){return a.status===statusFilter;});
+  const statusOrder = {Interviewing:0, Screening:1, Applied:2, Offer:3, Researching:4, Withdrawn:5, Rejected:6};
+  apps.sort(function(a,b){
+    let av = sortKey==="status" ? statusOrder[a.status] : (a[sortKey] || "");
+    let bv = sortKey==="status" ? statusOrder[b.status] : (b[sortKey] || "");
+    if(av < bv) return sortDir==="asc" ? -1 : 1;
+    if(av > bv) return sortDir==="asc" ? 1 : -1;
+    return 0;
+  });
+  return apps;
+}
+
+function renderAppBody(){
+  const el = document.getElementById('appBody');
+  const rows = sortedFiltered();
+  document.getElementById('appCount').textContent = STATE.applications.length + (STATE.applications.length===1?" row":" rows");
+  if(!rows.length){
+    el.innerHTML = '<tr><td colspan="11"><div class="empty">No applications match this filter.</div></td></tr>';
+    return;
+  }
+  el.innerHTML = rows.map(function(a){
+    const href = safeHref(a.link);
+    const applyCell = href
+      ? '<a class="apply-link" href="'+escAttr(href)+'" target="_blank" rel="noopener">Apply &#8599;</a>'
+      : (a.link ? esc(a.link) : '<span class="mono" style="color:var(--ink-dim)">&mdash;</span>');
+    return '<tr>'
+      + '<td class="company">'+esc(a.company)+'</td>'
+      + '<td class="role">'+esc(a.role)+'</td>'
+      + '<td>'+applyCell+'</td>'
+      + '<td>'+esc(a.location)+'</td>'
+      + '<td>'+esc(a.country)+'</td>'
+      + '<td>'+esc(a.source)+'</td>'
+      + '<td class="mono">'+fmtDate(a.dateApplied)+'</td>'
+      + '<td><span class="pill '+(STATUS_CLASS[a.status]||'')+'">'+esc(a.status)+'</span></td>'
+      + '<td>'+esc(a.contact)+'</td>'
+      + '<td>'+esc(a.nextStep)+'</td>'
+      + '<td class="notes">'+esc(a.notes)+'</td>'
+      + '</tr>';
+  }).join('');
+}
+
+function renderTargets(){
+  const el = document.getElementById('targetBody');
+  document.getElementById('targetCount').textContent = STATE.targets.length + (STATE.targets.length===1?" row":" rows");
+  if(!STATE.targets.length){
+    el.innerHTML = '<tr><td colspan="5"><div class="empty">No target companies yet.</div></td></tr>';
+    return;
+  }
+  el.innerHTML = STATE.targets.map(function(t){
+    return '<tr>'
+      + '<td class="company">'+esc(t.company)+'</td>'
+      + '<td>'+esc(t.country)+'</td>'
+      + '<td>'+esc(t.why)+'</td>'
+      + '<td>'+esc(t.visa)+'</td>'
+      + '<td class="notes">'+esc(t.notes)+'</td>'
+      + '</tr>';
+  }).join('');
+}
+
+function renderFooter(){
+  document.getElementById('lastUpdated').textContent = STATE.updatedAt
+    ? ("last updated " + new Date(STATE.updatedAt).toLocaleString())
+    : "not yet updated";
+}
+
+function render(){
+  renderStats();
+  renderFilters();
+  renderAppHead();
+  renderAppBody();
+  renderTargets();
+  renderFooter();
+}
+
+document.getElementById('appHead').addEventListener('click', function(e){
+  const th = e.target.closest('th[data-key]');
+  if(!th) return;
+  const key = th.dataset.key;
+  if(sortKey === key){ sortDir = sortDir === "asc" ? "desc" : "asc"; }
+  else { sortKey = key; sortDir = "asc"; }
+  renderAppHead();
+  renderAppBody();
+});
+
+document.getElementById('statusFilters').addEventListener('click', function(e){
+  const btn = e.target.closest('button[data-status]');
+  if(!btn) return;
+  statusFilter = btn.dataset.status;
+  renderFilters();
+  renderAppBody();
+});
+
+render();
+</script>
+</body>
+</html>
